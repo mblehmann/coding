@@ -2,39 +2,37 @@
 
 using namespace std;
 
-int main() {
-	unsigned long int b, e;
-	while (cin >> b >> e) {
-		unsigned long int pb, pe;
-		pb = b;
-		pe = e;
-		
-		unsigned long int c, d;
-		int maxconta = 0;
-		int conta;
+int calculateCycleLength(unsigned int n)
+{
+    int cycleLength = 1;
 
-		if (b > e) {
-			d = e;
-			e = b;
-			b = d;
-		}
+    while (n != 1)
+    {
+        if (n % 2 == 1) n = n*3 + 1;
+        else            n = n/2;
 
-		for (unsigned long int i = b; i <= e; i++) {
-			conta = 0;
-			c = i;
-			while (c != 1) {
-				if (c % 2 == 1) {
-					c = (c*3) + 1;
-				} else {
-					c = c / 2;
-				}
-				conta++;
-			}
-			conta++;
-			if (conta > maxconta) maxconta = conta;
+        cycleLength++;
+    }
+
+    return cycleLength;
+}
+
+int main()
+{
+	unsigned int i;
+    unsigned int j;
+	while (cin >> i >> j)
+    {
+        cout << i << " " << j << " ";
+		int maximumCycleLength = 0;
+
+		for (int n = min(i, j); n <= max(i, j); n++)
+        {
+            int cycleLength = calculateCycleLength(n);
+            maximumCycleLength = max(maximumCycleLength, cycleLength);
 		}
 		
-		cout << pb << " " << pe << " " << maxconta << endl;
+		cout << maximumCycleLength << endl;
 	}
 	
 	return 0;
