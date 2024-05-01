@@ -1,179 +1,153 @@
 #include <iostream>
+#include <vector>
 
 using namespace std;
 
-int main() {
+class Strips
+{
+public:
+    Strips(int n)
+    {
+        blockRow = vector<int>(n);
+        strip = vector<vector<int> >(n);
 
- int matriz[26][26];
- int size[26];
- int pos[26];
- int n;
-
- char comando[6];
- char acao[6];
- int a, b;
- bool remove;
- int removed;
- int caixa;
- int num;
-
- for (int i = 0; i < 26; i++) {
-  for (int j = 0; j < 26; j++) {
-   matriz[i][j] = 0;
-  }
- }
-
- for (int i = 0; i < 26; i++) {
-  size[i] = 1;
-  pos[i] = i;
-  matriz[i][0] = i;
- }
-
- cin >> n;
-
- while (true) {
-  cin >> comando;
-  if (comando[0] == 'q') break;
-
-  cin >> a >> acao >> b;
-  if (pos[a] != pos[b]) {
-   if (comando[0] == 'm' && acao[1] == 'n') {
-    remove = false;
-    removed = 0;
-    caixa = pos[a];
-    for (int i = 0; i < size[caixa]; i++) {
-     if (remove) { 
-      num = matriz[caixa][i];
-      matriz[num][size[num]] = num;
-      pos[num] = num;
-      size[num]++;
-      removed++;
-     } else if (matriz[caixa][i] == a) {
-      remove = true;
-     }
+        for (int block = 0; block < n; block++)
+        {
+            placeBlockIn(block, block);
+        }
     }
-    size[caixa] -= removed;
 
-    remove = false;
-    removed = 0;
-    caixa = pos[b];
-    for (int i = 0; i < size[caixa]; i++) {
-     if (remove) { 
-      num = matriz[caixa][i];
-      matriz[num][size[num]] = num;
-      pos[num] = num;
-      size[num]++;
-      removed++;
-     } else if (matriz[caixa][i] == b) {
-      remove = true;
-     }
+    bool blocksAreInTheSameRow(int a, int b)
+    {
+        return blockRow[a] == blockRow[b];
     }
-    size[caixa] -= removed;
 
-    size[pos[a]]--;
-    pos[a] = caixa;
-    matriz[caixa][size[caixa]] = a;
-    size[caixa]++;
-
-   }
-   if (comando[0] == 'm' && acao[1] == 'v') {
-    remove = false;
-    removed = 0;
-    caixa = pos[a];
-    for (int i = 0; i < size[caixa]; i++) {
-     if (remove) { 
-      num = matriz[caixa][i];
-      matriz[num][size[num]] = num;
-      pos[num] = num;
-      size[num]++;
-      removed++;
-     } else if (matriz[caixa][i] == a) {
-      remove = true;
-     }
+    void moveOnto(int a, int b)
+    {
+        returnBlocksOnTopOf(a);
+        returnBlocksOnTopOf(b);
+        int block = removeBlockAt(blockRow[a]);
+        placeBlockIn(block, blockRow[b]);
     }
-    size[caixa] -= removed;
 
-    caixa = pos[b];
-    size[pos[a]]--;
-    pos[a] = caixa;
-    matriz[caixa][size[caixa]] = a;
-    size[caixa]++;
-
-   }
-   if (comando[0] == 'p' && acao[1] == 'n') {
-    remove = false;
-    removed = 0;
-    caixa = pos[b];
-    for (int i = 0; i < size[caixa]; i++) {
-     if (remove) { 
-      num = matriz[caixa][i];
-      matriz[num][size[num]] = num;
-      pos[num] = num;
-      size[num]++;
-      removed++;
-     } else if (matriz[caixa][i] == b) {
-      remove = true;
-     }
+    void moveOver(int a, int b)
+    {
+        returnBlocksOnTopOf(a);
+        int block = removeBlockAt(blockRow[a]);
+        placeBlockIn(block, blockRow[b]);
     }
-    size[caixa] -= removed;
 
-
-    remove = false;
-    removed = 0;
-    caixa = pos[a];
-    for (int i = 0; i < size[caixa]; i++) {
-     if (matriz[caixa][i] == a) {
-      remove = true;
-     }
-     if (remove) { 
-      num = matriz[caixa][i];
-      matriz[pos[b]][size[pos[b]]] = num;
-      pos[num] = pos[b];
-      size[pos[b]]++;
-      removed++;
-     }
+    void pileOnto(int a, int b)
+    {
+        returnBlocksOnTopOf(b);
+        vector<int> blocks = removeBlocksOnTopOf(a);
+        placeBlocksIn(blocks, blockRow[b]);
     }
-    size[caixa] -= removed;  
 
-   }
-   if (comando[0] == 'p' && acao[1] == 'v') {
-    remove = false;
-    removed = 0;
-    caixa = pos[a];
-    for (int i = 0; i < size[caixa]; i++) {
-     if (matriz[caixa][i] == a) {
-      remove = true;
-     }
-     if (remove) { 
-      num = matriz[caixa][i];
-      matriz[pos[b]][size[pos[b]]] = num;
-      pos[num] = pos[b];
-      size[pos[b]]++;
-      removed++;
-     } 
+    void pileOver(int a, int b)
+    {
+        vector<int> blocks = removeBlocksOnTopOf(a);    
+        placeBlocksIn(blocks, blockRow[b]);
     }
-    size[caixa] -= removed;
 
-   }
-
-
-  }
-
- }
-  for (int i = 0; i < n; i++) {
-   cout << i << ":";
-   if (size[i] > 0) {
-   	cout << " ";
-   }
-   for (int j = 0; j < size[i]; j++) {
-    cout << matriz[i][j];
-    if (j != size[i]-1) {
-     cout << " ";
+    void print()
+    {
+        for (int row = 0; row < strip.size(); row++)
+        {
+            cout << row << ":";
+            for (int column = 0; column < strip[row].size(); column++)
+            {
+                cout << " " << strip[row][column];
+            }
+            cout << endl;
+        }
     }
-   }
-   cout << endl;
-  }
 
- return 0;
+private:
+    vector<vector<int> > strip;
+    vector<int> blockRow;
 
+    void placeBlockIn(int block, int row)
+    {
+        strip[row].push_back(block);
+        blockRow[block] = row;
+    }
+
+    void placeBlocksIn(vector<int> blocks, int row)
+    {
+        while(!blocks.empty())
+        {
+            int block = blocks.back();
+            placeBlockIn(block, row);
+            blocks.pop_back();
+        }
+    }
+
+    void returnBlocksOnTopOf(int block)
+    {
+        int row = blockRow[block];
+
+        while(strip[row].back() != block)
+        {
+            int lastBlock = removeBlockAt(row);
+            placeBlockIn(lastBlock, lastBlock);
+        }
+    }
+
+    vector<int> removeBlocksOnTopOf(int block)
+    {
+        int row = blockRow[block];
+        vector<int> blocks;
+        int lastBlock;
+
+        while(strip[row].back() != block)
+        {
+            lastBlock = removeBlockAt(row);
+            blocks.push_back(lastBlock);
+        }
+
+        lastBlock = removeBlockAt(row);
+        blocks.push_back(lastBlock);
+
+        return blocks;
+    }
+
+    int removeBlockAt(int row)
+    {
+        int block = strip[row].back();
+        strip[row].pop_back();
+        return block;
+    }
+
+};
+
+int main()
+{
+    int n;
+    string command;
+    int a;
+    string action;
+    int b;
+
+    cin >> n;
+
+    Strips strip = Strips(n);
+
+    while (true)
+    {
+        cin >> command;
+        if (command == "quit") break;
+
+        cin >> a >> action >> b;
+        if (strip.blocksAreInTheSameRow(a, b)) continue;
+
+        if (command == "move" && action == "onto")      strip.moveOnto(a, b);
+        else if (command == "move" && action == "over") strip.moveOver(a, b);
+        else if (command == "pile" && action == "onto") strip.pileOnto(a, b);
+        else if (command == "pile" && action == "over") strip.pileOver(a, b);
+    }
+
+    strip.print();
+
+    return 0;
 }
