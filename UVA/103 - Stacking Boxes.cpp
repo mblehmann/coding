@@ -1,112 +1,190 @@
 #include <iostream>
-#include <stdio.h>
-#include <stdlib.h>
+#include <vector>
+#include <set>
+#include <algorithm>
 
 using namespace std;
 
-int d, n;
-int boxes[30][11];
-int a;
-bool t;
 
-bool fits[30][30];
-
-int sol[30];
-int cur[30];
-int s;
-
-int compare(const void *a, const void *b) {
- return ( *(int*)a - *(int*)b );
-}
-
-int fit(int *a, int *b, int s) {
- for (int i = 0; i < s; i++) {
-  if (a[i] >= b[i]) return false;
- }
- return true;
-}
-
-int back(int index, int size) {
- int c[30];
- int num = 0;
- for (int i = index-1; i >= 0; i--) {
-  if (fits[i][index]) {
-   c[num] = i;
-   num++;
-  }
- }
- 
- if (num == 0) {
-  if (size > s) {
-   for (int i = 0; i < size; i++) {
-    sol[i] = cur[i];
-   }
-   s = size;
-  }
- } else {
-  for (int i = 0; i < num; i++) {
-   cur[size] = boxes[c[i]][d];
-   back(c[i], size+1);
-  }
- } 
-
-}
-
-int main() {
-
- while (cin >> n >> d) {
-  for (int i = 0; i < n; i++) {
-   for (int j = 0; j < d; j++) {
-    cin >> boxes[i][j];
-   }
-   boxes[i][d] = i+1;
-  }
-
-  for (int i = 0; i < n; i++) {
-   qsort(boxes[i], d, sizeof(int), compare);
-  }
-
-  for (int i = 0; i < n; i++) {
-   for (int j = 0; j < n-i-1; j++) {
-    t = false;
-    for (int k = 0; k < d; k++) {
-     if (boxes[j][k] < boxes[j+1][k]) break;
-     if (boxes[j][k] > boxes[j+1][k]) { t = true; break; }
+class Box
+{
+public:
+    Box(int index) : index(index)
+    {
+        longestChainSize = -1;
+        nextElementLongestChain = NULL;
     }
-    if (t) {
-     for (int k = 0; k <= d; k++) {
-      a = boxes[j][k];
-      boxes[j][k] = boxes[j+1][k];
-      boxes[j+1][k] = a;
-     }
+
+    void addMeasurement(int measurement)
+    {
+        measurements.push_back(measurement);
     }
-   }
-  }
- 
-  s = 0;
 
-  for (int i = 0; i < n; i++) {
-   for (int j = 0; j < n; j++) {
-    fits[i][j] = fit(boxes[i], boxes[j], d);
-   }
-  }
+    void sortBySize()
+    {
+        sort(measurements.begin(), measurements.end());
+    }
 
-  for (int i = n-1; i >= 0; i--) {
-   cur[0] = boxes[i][d];
-   back(i, 1);
-  }
+    void addNestingBox(Box* box)
+    {
+        for (int dimension = 0; dimension < measurements.size(); dimension++)
+        {
+            if (box->getMeasurmentAt(dimension) >= getMeasurmentAt(dimension))
+            {
+                return;
+            }
+        }
+        nestingBoxes.push_back(box);
+    }
 
-  cout << s << endl;
-  for (int i = s-1; i >= 0; i--) {
-   cout << sol[i];
-   if (i > 0) {
-    cout << " ";
-   }
-  }
-  cout << endl;
+    vector<Box*> getNestingBoxes()
+    {
+        return nestingBoxes;
+    }
 
- }
+    int getIndex() const
+    {
+        return index;
+    }
 
- return 0;
+    int calculateLongestChain()
+    {
+        if (longestChainSize > 0) return longestChainSize;
 
+        longestChainSize = 1;
+        nextElementLongestChain = NULL;
+        for (auto box : nestingBoxes)
+        {
+            int result = 1 + box->calculateLongestChain();
+            if (result > longestChainSize)
+            {
+                nextElementLongestChain = box;
+                longestChainSize = result;
+            }
+        }
+
+        return longestChainSize;
+    }
+
+    Box* getNextElementLongestChain()
+    {
+        return nextElementLongestChain;
+    }
+
+    int getDimension() const
+    {
+        return measurements.size();
+    }
+
+    int getMeasurmentAt(int dimension) const
+    {
+        return measurements[dimension];
+    }
+
+    static bool compareBoxes(const Box* a, const Box* b)
+    {
+        for (int dimension = 0; dimension < a->getDimension(); dimension++)
+        {
+            if (a->getMeasurmentAt(dimension) < b->getMeasurmentAt(dimension)) return true;
+            if (a->getMeasurmentAt(dimension) > b->getMeasurmentAt(dimension)) return false;
+        }
+        return false;
+    }
+
+private:
+    int index;
+    vector<int> measurements;
+    vector<Box*> nestingBoxes;
+    Box* nextElementLongestChain;
+    int longestChainSize;
+};
+
+
+class Storage
+{
+public:
+    Storage() {}
+
+    void addBox(Box* box)
+    {
+        box->sortBySize();
+        boxes.push_back(box);
+    }
+    
+    void sortBoxes()
+    {
+        sort(boxes.begin(), boxes.end(), Box::compareBoxes);
+    }
+
+    void calculateNestingBoxes()
+    {
+        for (auto box1 : boxes)
+        {
+            for (auto box2 : boxes)
+            {
+                box1->addNestingBox(box2);
+            }
+        }
+    }
+
+    vector<int> calculateLongestNestingChain()
+    {
+        vector<int> longestNestingChain;
+        for (auto box : boxes)
+        {
+            int result = box->calculateLongestChain();
+            if (result > longestNestingChain.size())
+            {
+                longestNestingChain.clear();
+                Box* current = box;
+                while(true)
+                {
+                    longestNestingChain.push_back(current->getIndex() + 1);
+                    if (current->getNextElementLongestChain() == NULL) break;
+                    current = current->getNextElementLongestChain();
+                }
+            }
+        }
+        return longestNestingChain;
+    }
+
+private:
+    vector<Box*> boxes;
+};
+
+
+int main()
+{
+    int k;
+    int n;
+    int value;
+
+    while (cin >> k >> n)
+    {
+        Storage* storage = new Storage();
+        for (int boxIndex = 0; boxIndex < k; boxIndex++)
+        {
+            Box* box = new Box(boxIndex);
+            for (int measurement = 0; measurement < n; measurement++)
+            {
+                cin >> value;
+                box->addMeasurement(value);
+            }
+            storage->addBox(box);
+        }
+
+        storage->sortBoxes();
+        storage->calculateNestingBoxes();
+
+        vector<int> longestNestingChain = storage->calculateLongestNestingChain();
+        cout << longestNestingChain.size() << endl;
+        for (auto box = longestNestingChain.rbegin(); box != longestNestingChain.rend(); ++box)
+        {
+            cout << *box << " ";
+        }
+        cout << endl;
+
+    }
+
+    return 0;
 }
