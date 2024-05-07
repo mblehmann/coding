@@ -2,56 +2,84 @@
 
 using namespace std;
 
+
+class SnailSimulator
+{
+public:
+    SnailSimulator(int wellHeight, int climbDistance, int slideDistance, int fatigueFactor)
+    : wellHeight(wellHeight), climbDistance(climbDistance), slideDistance(slideDistance), fatigueFactor(fatigueFactor)
+    {
+        day = 0;
+        location = 0;
+        success = false;
+
+        fatiguePenalty = climbDistance * (fatigueFactor / 100.0);
+        currentClimbDistance = climbDistance;
+    }
+
+    void simulate()
+    {
+        while(true)
+        {
+            day++;
+            
+            if (currentClimbDistance > 0)
+            {
+                location += currentClimbDistance;
+            }
+            if (location > wellHeight)
+            {
+                success = true;
+                return;
+            }
+
+            location -= slideDistance;
+            if (location < 0)
+            {
+                success = false;
+                return;
+            }
+
+            currentClimbDistance -= fatiguePenalty;
+        }
+    }
+
+    string getResult()
+    {
+        return success ? "success on day " + to_string(day) : "failure on day " + to_string(day);
+    }
+
+private:
+    int wellHeight;
+    int climbDistance;
+    int slideDistance;
+    int fatigueFactor;
+
+    float fatiguePenalty;
+    float currentClimbDistance;
+
+    int day;
+    float location;
+    bool success;
+};
+
 int main()
 {
-	int h, u, d, f;
-	int c;
-	float p, r;
-	float s;
+    int wellHeight;
+    int climbDistance;
+    int slideDistance;
+    int fatigueFactor;
 
-	bool a;
+    while (true)
+    {
+        cin >> wellHeight >> climbDistance >> slideDistance >> fatigueFactor;
 
-	while (true)
-	{
-		cin >> h >> u >> d >> f;
+        if (wellHeight == 0) break;
 
-		if (h == 0) break;
+        SnailSimulator simulator(wellHeight, climbDistance, slideDistance, fatigueFactor);
+        simulator.simulate();
+        cout << simulator.getResult() << endl;
+    }    
 
-		s = 0;
-		c = 1;
-		r = u * (f / 100.0);
-		p = u;
-
-		do
-		{
-			if (p > 0)
-			{
-				s += p;
-			}
-			
-			if (s > h) 
-			{
-				a = true;
-				break;
-			}
-
-			s -= d;
-			if (s < 0)
-			{
-				a = false;
-				break;
-			}
-
-			p -= r;
-			c++;
-
-		} while (true);
-
-		if (a) cout << "success";
-		else cout << "failure";
-		cout << " on day " << c << endl;
-	}
-
-	return 0;
+    return 0;
 }
-
